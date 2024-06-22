@@ -295,7 +295,7 @@ Private Type DfsMatcherStack
     length As Long
 End Type
 
-Private Type DfsMatcherContext
+Public Type DfsMatcherContext
     matcherStack As DfsMatcherStack
     capturesStack As ArrayBuffer
     qstack As ArrayBuffer
@@ -2620,23 +2620,35 @@ Public Function DfsMatch( _
     Optional ByVal stepsLimit = DEFAULT_STEPS_LIMIT, _
     Optional ByVal reFlags = DFS_FLAGS_NONE _
 ) As Long
-    Dim maxCapturePointIdx As Long, res As Long, context As DfsMatcherContext, sp As Long
+    Dim context As DfsMatcherContext
+    DfsMatch = DfsMatchFrom(context, outCaptures, bytecode, inputStr, 0, stepsLimit, reFlags)
+End Function
+
+Public Function DfsMatchFrom( _
+    ByRef context As DfsMatcherContext, _
+    ByRef outCaptures() As Long, _
+    ByRef bytecode() As Long, _
+    ByRef inputStr As String, _
+    ByVal sp As Long, _
+    Optional ByVal stepsLimit = DEFAULT_STEPS_LIMIT, _
+    Optional ByVal reFlags = DFS_FLAGS_NONE _
+) As Long
+    Dim maxCapturePointIdx As Long, res As Long
     
     maxCapturePointIdx = bytecode(0)
     If maxCapturePointIdx >= 0 Then ReDim outCaptures(0 To maxCapturePointIdx) As Long
     
-    sp = 0
     Do While sp <= Len(inputStr)
         InitializeMatcherContext context, maxCapturePointIdx + 1
         res = DfsRunThreads(outCaptures, context, bytecode, inputStr, sp, stepsLimit, reFlags)
         If res <> -1 Then
-            DfsMatch = res
+            DfsMatchFrom = res
             Exit Function
         End If
         sp = sp + 1
     Loop
 
-    DfsMatch = -1
+    DfsMatchFrom = -1
 End Function
 
 Private Function GetBc(ByRef bytecode() As Long, ByRef pc As Long) As Long

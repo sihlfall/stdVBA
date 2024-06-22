@@ -101,7 +101,8 @@ Public Function MatchAll(ByRef sHaystack As String) As Collection
     Dim captures() As Long
     Dim oRet As Collection
     Dim oDict As Object
-    Dim j As Long, n As Long
+    Dim j As Long, n As Long, cur As Long
+    Dim context As stdRegex3Implementation.DfsMatcherContext
 
     If Me Is stdRegex3 Then
         Error.Raise "Method called on class not object"
@@ -110,20 +111,21 @@ Public Function MatchAll(ByRef sHaystack As String) As Collection
 
     Set oRet = New Collection
 
-    If stdRegex3Implementation.DfsMatch(captures, This.bytecode, sHaystack) = -1 Then
-        Set MatchAll = oRet
-        Exit Function
-    End If
+    cur = 0
+    Do
+        cur = stdRegex3Implementation.DfsMatchFrom(context, captures, This.bytecode, sHaystack, cur)
+        If cur = -1 Then Exit Do
 
-    Set oDict = CreateObject("Scripting.Dictionary")
-    n = UBound(captures) \ 2
-    oDict("$COUNT") = n
+        Set oDict = CreateObject("Scripting.Dictionary")
+        n = UBound(captures) \ 2
+        oDict("$COUNT") = n
 
-    For j = 0 To n
-        oDict(j) = Mid$(sHaystack, 1 + captures(2 * j), captures(2 * j + 1) - captures(2 * j))
-    Next
+        For j = 0 To n
+            oDict(j) = Mid$(sHaystack, captures(2 * j) + 1, captures(2 * j + 1) - captures(2 * j))
+        Next
 
-    oRet.Add oDict
+        oRet.Add oDict
+    Loop
 
     Set MatchAll = oRet
 End Function
